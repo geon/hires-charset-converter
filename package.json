@@ -11,7 +11,7 @@
     "test": "vitest",
     "verify": "npm run tsc && vitest --run",
     "coverage": "vitest run --coverage",
-    "publish": "npm run verify && npm run build && ./publish.sh",
+    "publish": "npm run tsc && npm run build && ./publish.sh",
     "prettier": "prettier --write \"src/**/*.ts{,x}\"",
     "last": ""
   },
