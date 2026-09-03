@@ -57,12 +57,7 @@ function ImageUi(props: {
 		<div className={style()}>
 			<Flex col>
 				<SettingsUi setters={props.setters} results={results} />
-				<Flex col>
-					<ImageDataCanvas imageData={results.imageData} />
-					<Flex row fill>
-						<ImageDataCanvas imageData={results.original} />
-					</Flex>
-				</Flex>
+				<ImageDataCanvas imageData={results.imageData} />
 			</Flex>
 		</div>
 	);
@@ -87,12 +82,6 @@ function SettingsUi(props: {
 
 			{props.results?.getC64HiresBitmap && (
 				<Flex row style={{ marginLeft: "auto" }}>
-					<a
-						href="https://tomseditor.com/gallery/online?f=kla2prg&lang=en"
-						target="_blank"
-					>
-						Converter
-					</a>
 					<BlobDownloadButton
 						getBlob={async () => {
 							const hiresBitmap = props.results!.getC64HiresBitmap!();

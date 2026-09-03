@@ -80,7 +80,6 @@ function getBayer(pos: Coord2): number {
 const tileSize: Coord2 = { x: 8, y: 8 };
 
 export type PalettizationResults = {
-	readonly original: ImageData;
 	readonly imageData: ImageData;
 	readonly getC64HiresBitmap: (() => HiresBitmap) | undefined;
 };
@@ -189,7 +188,6 @@ export function usePalettization(
 	}
 
 	return {
-		original: imageData,
 		imageData: result,
 		getC64HiresBitmap: !coord2Equal(charsAndSubPalettes.size, {
 			x: 16,
@@ -220,7 +218,6 @@ export function useBWQuantization(imageData: ImageData): PalettizationResults {
 	}
 
 	return {
-		original: imageData,
 		imageData: result,
 		getC64HiresBitmap: !coord2Equal(tiles.size, {
 			x: 16,
