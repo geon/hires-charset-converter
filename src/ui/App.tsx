@@ -13,6 +13,7 @@ import { c64RgbPalettes } from "../palette.js";
 import type { Setter } from "./setter.js";
 import { BlobDownloadButton } from "./BlobDownloadButton.js";
 import { charsetCCodeSerialize } from "../c64/charset-c-code.js";
+import { charsetBinSerialize } from "../c64/charset-bin.js";
 
 const style = stylize(cssModule, "base");
 
@@ -107,6 +108,22 @@ function SettingsUi(props: {
 						}}
 					>
 						Export C Code
+					</BlobDownloadButton>
+					<BlobDownloadButton
+						getBlob={async () => {
+							const hiresBitmap = props.results!.getC64HiresBitmap!();
+							const bin = hiresBitmap && charsetBinSerialize(hiresBitmap);
+							return bin === undefined
+								? undefined
+								: {
+										blob: new Blob([bin.buffer as ArrayBuffer], {
+											type: "application/octet-stream",
+										}),
+										fileName: "charset.bin",
+									};
+						}}
+					>
+						Export Bin
 					</BlobDownloadButton>
 				</Flex>
 			)}
