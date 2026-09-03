@@ -17,12 +17,9 @@ import { oklabFromRgb, oklabToRgb, type Oklab } from "./oklab";
 import { recordQuantize, recordQuantizeToIndex } from "./record-math";
 import { tileImageSplit, tileImageJoin } from "./tile-image";
 import { assertTuple, mapTuple } from "./tuple";
-import type {
-	MulticolorBitmap,
-	MulticolorBitmapChar,
-} from "./c64/multicolor-bitmap";
-import type { SubPaletteIndex } from "./c64/color-pixel-byte";
-import { screenSize } from "./c64/screen-size";
+import type { HiresBitmap } from "./c64/hires-bitmap";
+import type { HiresChar } from "./c64/hires-char";
+import { c64RgbPalettes } from "./palette";
 
 export function palettize(image: Image<Oklab>, palette: Oklab[]): Image<Oklab> {
 	return imageMap(image, (oklab) => recordQuantize(oklab, palette));
@@ -80,14 +77,12 @@ function getBayer(pos: Coord2): number {
 	]!;
 }
 
-// 4 double wide pixels
-const tileSize: Coord2 = { x: 4, y: 8 };
+const tileSize: Coord2 = { x: 8, y: 8 };
 
 export type PalettizationResults = {
 	readonly original: ImageData;
 	readonly imageData: ImageData;
-	readonly ideal: ImageData;
-	readonly getC64MulticolorBitmap: (() => MulticolorBitmap) | undefined;
+	readonly getC64HiresBitmap: (() => HiresBitmap) | undefined;
 };
 export function usePalettization(
 	imageData: ImageData,
@@ -180,41 +175,59 @@ export function usePalettization(
 		[quantized],
 	);
 
-	const ideal = useMemo(
-		() =>
-			oklabToImageData(imageDoubleWidth(getFullColorImage(idealPaletteImage))),
-		[idealPaletteImage],
-	);
-
-	function getC64MulticolorBitmap(): MulticolorBitmap {
-		return {
-			...imageMap(
-				charsAndSubPalettes,
-				(tile): MulticolorBitmapChar => ({
-					char: assertTuple(
-						strictChunk(tile.char.pixels, 4).map((row) =>
-							mapTuple(row, (pixel) => pixel as SubPaletteIndex),
-						),
-						8,
+	function getC64HiresBitmap(): HiresBitmap {
+		return imageMap(
+			charsAndSubPalettes,
+			(tile): HiresChar =>
+				assertTuple(
+					strictChunk(tile.char.pixels, 8).map((row) =>
+						mapTuple(row, (pixel) => (pixel === 0 ? 0 : 1)),
 					),
-					screenColors: [
-						tile.subPalette[1] as SubPaletteIndex,
-						tile.subPalette[2] as SubPaletteIndex,
-					],
-					colorRam: tile.subPalette[3] as SubPaletteIndex,
-				}),
-			),
-			bgColor: bgColorIndex,
-		};
+					8,
+				),
+		);
 	}
 
 	return {
 		original: imageData,
 		imageData: result,
-		ideal,
-		getC64MulticolorBitmap: !coord2Equal(charsAndSubPalettes.size, screenSize)
+		getC64HiresBitmap: !coord2Equal(charsAndSubPalettes.size, {
+			x: 16,
+			y: 16,
+		})
 			? undefined
-			: getC64MulticolorBitmap,
+			: getC64HiresBitmap,
+	};
+}
+
+export function useBWQuantization(imageData: ImageData): PalettizationResults {
+	const palette = c64RgbPalettes.pepto.map(oklabFromRgb);
+	const quantized = getPaletteImage(imageDataToOklab(imageData), palette);
+	const tiles = tileImageSplit(quantized, tileSize);
+	const result = oklabToImageData(getFullColorImage(quantized));
+
+	function getC64HiresBitmap(): HiresBitmap {
+		return imageMap(
+			tiles,
+			(tile): HiresChar =>
+				assertTuple(
+					strictChunk(tile.pixels, 8).map((row) =>
+						mapTuple(row, (pixel) => (pixel === 0 ? 0 : 1)),
+					),
+					8,
+				),
+		);
+	}
+
+	return {
+		original: imageData,
+		imageData: result,
+		getC64HiresBitmap: !coord2Equal(tiles.size, {
+			x: 16,
+			y: 16,
+		})
+			? undefined
+			: getC64HiresBitmap,
 	};
 }
 
